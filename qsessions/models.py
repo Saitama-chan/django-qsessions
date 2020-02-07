@@ -5,7 +5,8 @@ from django.contrib.sessions.base_session import AbstractBaseSession, BaseSessio
 from django.core.cache import caches
 from django.db import models
 from django.utils import timezone
-from django.utils.translation import ugettext_lazy as _
+from django.utils.translation import ugettext, ugettext_lazy as _
+
 
 import qsessions.geoip as geoip
 
@@ -42,6 +43,21 @@ class Session(AbstractBaseSession):
     @classmethod
     def get_session_store_class(cls):
         return import_module(settings.SESSION_ENGINE).SessionStore
+
+    def _time_on_site(self):
+
+        if self.created_at:
+            seconds = (self.updated_at - self.created_at).seconds
+
+            hours = seconds / 3600
+            seconds -= hours * 3600
+            minutes = seconds / 60
+            seconds -= minutes * 60
+
+            return u'%i:%02i:%02i' % (hours, minutes, seconds)
+        else:
+            return ugettext(u'unknown')
+    time_on_site = property(_time_on_site)
 
     def save(self, *args, **kwargs):
         # FIXME: find a better solution for `created_at` field which does not need an extra query.
